@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using AutoMapper.QueryableExtensions;
+using E_CommerceSystem.Infrastructure.Repositories;
 
 
 namespace E_CommerceSystem
@@ -97,6 +98,7 @@ namespace E_CommerceSystem
         }
     });
             });
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
