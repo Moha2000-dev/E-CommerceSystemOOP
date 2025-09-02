@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace E_CommerceSystem.Models
 {
+    public enum OrderStatus { Pending = 0, Paid = 1, Shipped = 2, Delivered = 3, Cancelled = 4 }
     public class Order
     {
         [Key] 
@@ -16,6 +17,8 @@ namespace E_CommerceSystem.Models
         [ForeignKey("user")]
         public int UID { get; set; }
         public User user { get; set; }
+
+        public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
         [JsonIgnore]
         public virtual ICollection <OrderProducts> OrderProducts { get; set; }

@@ -51,5 +51,22 @@ namespace E_CommerceSystem.Controllers
                 throw new UnauthorizedAccessException("User id not found in token.");
             return uid;
         }
+
+        [HttpPatch("{orderId:int}/status")]
+        public IActionResult UpdateStatus(int orderId, [FromQuery] OrderStatus status)
+        {
+            var uid = GetUserId(); // same helper you use
+            var ok = _orderService.UpdateStatus(orderId, uid, status);
+            return ok ? Ok("Status updated.") : NotFound("Order not found or not owned by user.");
+        }
+
+        [HttpPost("{orderId:int}/cancel")]
+        public IActionResult Cancel(int orderId)
+        {
+            var uid = GetUserId();
+            var ok = _orderService.Cancel(orderId, uid);
+            return ok ? Ok("Order cancelled and stock restored.") : BadRequest("Cannot cancel this order.");
+        }
+
     }
 }

@@ -45,6 +45,10 @@ namespace E_CommerceSystem.Repositories
             {
                 throw new InvalidOperationException($"Database error: {ex.Message}");
             }
+
+
+
+
         }
     }
 }

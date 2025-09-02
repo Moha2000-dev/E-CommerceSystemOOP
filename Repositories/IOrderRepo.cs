@@ -10,5 +10,8 @@ namespace E_CommerceSystem.Repositories
         Order GetOrderById(int oid);
         void UpdateOrder(Order order);
         IEnumerable<Order> GetOrderByUserId(int uid);
+        bool UpdateStatus(int orderId, int uid, OrderStatus status);
+        bool Cancel(int orderId, int uid);
+
     }
 }
