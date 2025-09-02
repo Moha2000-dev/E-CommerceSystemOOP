@@ -1,12 +1,13 @@
 ﻿namespace E_CommerceSystem.Models
 {
+    // Category class to represent product categories
     public class Category
     {
-        public int CategoryId { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
+        public int CategoryId { get; set; }  // Primary key for Category
+        public string Name { get; set; } = string.Empty; // Category name
+        public string? Description { get; set; } // Optional description
 
-        // nav
+        // Navigation property for related products
         public ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }
