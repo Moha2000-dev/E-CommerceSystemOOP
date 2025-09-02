@@ -8,13 +8,11 @@ It’s designed with clear layers (Controllers → Services → Repositories →
 ## 1) What is this? (Non-technical overview)
 
 This system provides the **backend** (no mobile/web UI included) for an online shop:
-
 * **Users** can register, log in, browse products, place orders, and leave reviews.
-* The system keeps track of **products**, **orders**, and **reviews** in a secure database.
+* * The system keeps track of **products**, **orders**, and **reviews** in a secure database.
 * Actions like adding reviews or placing orders require the user to log in and provide a secure token (JWT).
 
 ---
-
 ## 2) Data model (What data do we store?)
 
 * **Users**: name, email, password, phone, created date
