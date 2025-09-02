@@ -15,11 +15,11 @@ namespace E_CommerceSystem
         public DbSet<OrderProducts> OrderProducts { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder) // Override the OnModelCreating method to configure the model
         {
-            modelBuilder.Entity<User>()
-                        .HasIndex(u => u.Email)
-                        .IsUnique();
+            modelBuilder.Entity<User>() // Configure the User entity
+                        .HasIndex(u => u.Email) // Create an index on the Email property
+                        .IsUnique(); // Ensure the index is unique
 
         }
     }
