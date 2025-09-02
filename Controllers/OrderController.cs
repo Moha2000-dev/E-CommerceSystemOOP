@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using E_CommerceSystem.Models;
 using E_CommerceSystem.Services;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace E_CommerceSystem.Controllers
 {
@@ -51,22 +52,54 @@ namespace E_CommerceSystem.Controllers
                 throw new UnauthorizedAccessException("User id not found in token.");
             return uid;
         }
-
         [HttpPatch("{orderId:int}/status")]
         public IActionResult UpdateStatus(int orderId, [FromQuery] OrderStatus status)
         {
-            var uid = GetUserId(); // same helper you use
-            var ok = _orderService.UpdateStatus(orderId, uid, status);
-            return ok ? Ok("Status updated.") : NotFound("Order not found or not owned by user.");
+            try
+            {
+                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var userId = GetUserIdFromToken(token);
+                var uid = int.Parse(userId);
+
+                var ok = _orderService.UpdateStatus(orderId, uid, status);
+                return ok ? Ok("Status updated.") : NotFound("Order not found, not owned, or cannot update.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error updating status. {ex.Message}");
+            }
         }
 
         [HttpPost("{orderId:int}/cancel")]
         public IActionResult Cancel(int orderId)
         {
-            var uid = GetUserId();
-            var ok = _orderService.Cancel(orderId, uid);
-            return ok ? Ok("Order cancelled and stock restored.") : BadRequest("Cannot cancel this order.");
+            try
+            {
+                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var userId = GetUserIdFromToken(token);
+                var uid = int.Parse(userId);
+
+                var ok = _orderService.Cancel(orderId, uid);
+                return ok ? Ok("Order cancelled and stock restored.") : BadRequest("Cannot cancel this order.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error cancelling order. {ex.Message}");
+            }
         }
+
+        private string? GetUserIdFromToken(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (handler.CanReadToken(token))
+            {
+                var jwtToken = handler.ReadJwtToken(token);
+                var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub");
+                return subClaim?.Value;
+            }
+            throw new UnauthorizedAccessException("Invalid or unreadable token.");
+        }
+
 
     }
 }

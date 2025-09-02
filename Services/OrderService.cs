@@ -90,6 +90,41 @@ namespace E_CommerceSystem.Services
             return items;
         }
 
+        public bool UpdateStatus(int orderId, int uid, OrderStatus status)
+        {
+            var order = _orderRepo.GetOrderById(orderId);
+            if (order is null || order.UID != uid) return false;
+            if (order.Status == OrderStatus.Cancelled) return false; // no updates after cancel
+
+            order.Status = status;
+            _orderRepo.UpdateOrder(order);
+            return true;
+        }
+
+        public bool Cancel(int orderId, int uid)
+        {
+            var order = _orderRepo.GetOrderById(orderId);
+            if (order is null || order.UID != uid) return false;
+
+            // allow cancel only when Pending (adjust if you want Paid to be cancellable)
+            if (order.Status != OrderStatus.Pending) return false;
+
+            // restore stock
+            var items = _orderProductsService.GetOrdersByOrderId(order.OID) ?? new List<OrderProducts>();
+            foreach (var op in items)
+            {
+                var product = _productService.GetProductById(op.PID);
+                if (product is null) continue;
+                product.Stock += op.Quantity;
+                _productService.UpdateProduct(product);
+            }
+
+            order.Status = OrderStatus.Cancelled;
+            _orderRepo.UpdateOrder(order);
+            return true;
+        }
+
+
 
         public IEnumerable<Order> GetOrderByUserId(int uid)
         {
