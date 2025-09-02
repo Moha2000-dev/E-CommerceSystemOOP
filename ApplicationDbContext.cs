@@ -35,6 +35,13 @@ namespace E_CommerceSystem
                 .HasForeignKey(p => p.SupplierId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<OrderProducts>()
+                .HasOne(op => op.product)
+                .WithMany(p => p.OrderProducts)   // add collection to Product if you want
+                .HasForeignKey(op => op.PID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
         }
     }
 }

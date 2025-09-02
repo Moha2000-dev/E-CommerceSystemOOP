@@ -1,4 +1,5 @@
-﻿using E_CommerceSystem.Models;
+﻿using AutoMapper;
+using E_CommerceSystem.Models;
 using E_CommerceSystem.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -13,75 +14,82 @@ namespace E_CommerceSystem.Services
         private readonly IOrderRepo _orderRepo;
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
+        private readonly IMapper _mapper;
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService)
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
+            _mapper = mapper;
         }
 
         //get all orders for login user
-        public List <OrderProducts> GetAllOrders(int uid)
+        // get all orders for logged-in user -> list of lightweight order rows
+        public IEnumerable<OrdersOutputOTD> GetAllOrders(int uid)
         {
             var orders = _orderRepo.GetOrderByUserId(uid);
             if (orders == null || !orders.Any())
-                throw new InvalidOperationException($"No orders found for user ID {uid}.");
+                return Enumerable.Empty<OrdersOutputOTD>();
 
-            // Collect all OrderProducts for all orders
-            var allOrderProducts = new List<OrderProducts>();
+            var result = new List<OrdersOutputOTD>();
 
             foreach (var order in orders)
             {
-                var orderProducts = _orderProductsService.GetOrdersByOrderId(order.OID);
-                if (orderProducts != null)
-                    allOrderProducts.AddRange(orderProducts);
+                var orderProducts = _orderProductsService.GetOrdersByOrderId(order.OID) ?? new List<OrderProducts>();
+
+                // Map each OrderProducts -> OrderItemDTO with AutoMapper,
+                // then create your existing OrdersOutputOTD row (keep your current shape).
+                foreach (var op in orderProducts)
+                {
+                    var product = _productService.GetProductById(op.PID);
+                    if (product is null) continue;
+
+                    // we already configured: CreateMap<OrderProducts, OrderItemDTO>()
+                    var itemDto = _mapper.Map<OrderItemDTO>(op);
+
+                    result.Add(new OrdersOutputOTD
+                    {
+                        ProductName = itemDto.ProductName,   // from map (or empty string if nav not set)
+                        Quantity = itemDto.Quantity,
+                        OrderDate = order.OrderDate,
+                        TotalAmount = itemDto.Quantity * product.Price
+                    });
+                }
             }
 
-            return allOrderProducts;
-
+            return result;
         }
 
         //get order by order id for the login user
         public IEnumerable<OrdersOutputOTD> GetOrderById(int oid, int uid)
         {
-            //list of items in the order 
-            List<OrdersOutputOTD> items = new List<OrdersOutputOTD>();
-            OrdersOutputOTD ordersOutputOTD = null;
-
-            
-            List<OrderProducts> products = null;
-            Product product = null;
-            string productName = string.Empty;
-
-            //get order 
             var order = _orderRepo.GetOrderById(oid);
+            if (order == null || order.UID != uid)
+                return Enumerable.Empty<OrdersOutputOTD>();
 
-            if (order == null)
-                throw new InvalidOperationException($"No orders found .");
+            var items = new List<OrdersOutputOTD>();
+            var products = _orderProductsService.GetOrdersByOrderId(oid) ?? new List<OrderProducts>();
 
-            //execute the products data in existing Product
-            if (order.UID == uid)
+            foreach (var op in products)
             {
-                products = _orderProductsService.GetOrdersByOrderId(oid);
-                foreach (var p in products)
+                var product = _productService.GetProductById(op.PID);
+                if (product is null) continue;
+
+                var itemDto = _mapper.Map<OrderItemDTO>(op);
+
+                items.Add(new OrdersOutputOTD
                 {
-                    product = _productService.GetProductById(p.PID);
-                    productName = product.ProductName;
-                    ordersOutputOTD = new OrdersOutputOTD
-                    {
-                        ProductName = productName,
-                        Quantity = p.Quantity,
-                        OrderDate = order.OrderDate,
-                        TotalAmount = p.Quantity * product.Price,
-                    };
-                    items.Add(ordersOutputOTD);
-                }
+                    ProductName = itemDto.ProductName,
+                    Quantity = itemDto.Quantity,
+                    OrderDate = order.OrderDate,
+                    TotalAmount = itemDto.Quantity * product.Price
+                });
             }
-   
+
             return items;
-     
         }
+
 
         public IEnumerable<Order> GetOrderByUserId(int uid)
         {

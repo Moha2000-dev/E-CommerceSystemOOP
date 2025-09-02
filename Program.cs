@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using AutoMapper.QueryableExtensions;
+
 
 namespace E_CommerceSystem
 {
@@ -31,6 +33,15 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<IOrderService, OrderService>();
 
             builder.Services.AddScoped<IReviewRepo, ReviewRepo>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
+
+            builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<ISupplierService, SupplierService>();
+            builder.Services.AddScoped<IProductService, ProductService>();           // if you use it
+            builder.Services.AddScoped<IProductQueryService, ProductQueryService>(); // for paging list
+            builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>

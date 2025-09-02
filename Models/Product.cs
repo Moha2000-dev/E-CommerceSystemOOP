@@ -34,7 +34,7 @@ namespace E_CommerceSystem.Models
 
         public int SupplierId { get; set; }        // FK to Supplier
         public Supplier? Supplier { get; set; }    // Navigation
- 
+        public string? ImageUrl { get; set; }
 
     }
 }

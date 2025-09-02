@@ -2,9 +2,6 @@
 using E_CommerceSystem.Repositories;
 using static E_CommerceSystem.Models.CategoryDtos;
 using AutoMapper;
-using E_CommerceSystem.Models;
-using E_CommerceSystem.Infrastructure.Repositories;
-using E_CommerceSystem.Models;
 namespace E_CommerceSystem.Services
 {
     public class CategoryService : ICategoryService

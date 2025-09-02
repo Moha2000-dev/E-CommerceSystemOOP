@@ -23,7 +23,8 @@ namespace E_CommerceSystem.Models
         [ForeignKey("Product")]
         public int PID { get; set; }
         [JsonIgnore]
-        public Product product { get; set; }
+        public Product? product { get; set; }
+        
     }
 }
 

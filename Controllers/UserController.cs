@@ -1,4 +1,5 @@
-﻿using E_CommerceSystem.Models;
+﻿using AutoMapper;
+using E_CommerceSystem.Models;
 using E_CommerceSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,82 +12,87 @@ namespace E_CommerceSystem.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[Controller]")]
-    public class UserController: ControllerBase
+    [Route("api/[controller]")]
+    public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        public UserController(IUserService userService, IConfiguration configuration)
+        public UserController(IUserService userService, IConfiguration configuration, IMapper mapper)
         {
             _userService = userService;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public IActionResult Register(UserDTO InputUser)
+        public IActionResult Register([FromBody] UserDTO inputUser)
         {
             try
             {
-                if(InputUser == null)
-                    return BadRequest("User data is required");
+                if (inputUser == null)
+                    return BadRequest("User data is required.");
 
-                var user = new User
-                {
-                    UName = InputUser.UName,
-                    Email = InputUser.Email,
-                    Password = InputUser.Password,
-                    Role = InputUser.Role,
-                    Phone = InputUser.Phone,
-                    CreatedAt = DateTime.Now
-                };
+                // DTO -> Entity via AutoMapper
+                var user = _mapper.Map<User>(inputUser);
+                user.CreatedAt = DateTime.UtcNow; // set here (profile ignores it)
+
+                // (Optional) hash password here or in service
+                // user.Password = _passwordHasher.Hash(inputUser.Password);
 
                 _userService.AddUser(user);
 
-                return Ok(user);
+                // Entity -> DTO (but never include password)
+                var result = _mapper.Map<UserDTO>(user);
+                // ensure we don’t expose it even if someone later changes the profile
+                result.Password = null;
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while adding the user. {ex.Message} ");
+                return StatusCode(500, $"An error occurred while adding the user. {ex.Message}");
             }
         }
 
-
+        // keeping your GET login shape (though POST is recommended)
         [AllowAnonymous]
         [HttpGet("Login")]
-        public IActionResult Login(string email, string password)
+        public IActionResult Login([FromQuery] string email, [FromQuery] string password)
         {
             try
             {
                 var user = _userService.GetUSer(email, password);
+                if (user == null) return Unauthorized("Invalid credentials.");
+
                 string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role);
                 return Ok(token);
-
             }
             catch (Exception ex)
             {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while login. {(ex.Message)}");
+                return StatusCode(500, $"An error occurred while login. {ex.Message}");
             }
-
         }
 
-
-        [HttpGet("GetUserById/{UserID}")]
-        public IActionResult GetUserById(int UserID)
+        [HttpGet("GetUserById/{userId:int}")]
+        public IActionResult GetUserById(int userId)
         {
             try
             {
-                var user = _userService.GetUserById(UserID);
-                return Ok(user);
-   
+                var user = _userService.GetUserById(userId);
+                if (user == null) return NotFound();
+
+                // Entity -> DTO (no password)
+                var dto = _mapper.Map<UserDTO>(user);
+                dto.Password = null;
+
+                return Ok(dto);
             }
             catch (Exception ex)
             {
-                // Return a generic error response
-                return StatusCode(500, $"An error occurred while retrieving user. {(ex.Message)}");
+                return StatusCode(500, $"An error occurred while retrieving user. {ex.Message}");
             }
         }
 
@@ -100,9 +106,10 @@ namespace E_CommerceSystem.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.Name, username),
+                // you currently store role in "unique_name"; consider adding ClaimTypes.Role too:
                 new Claim(JwtRegisteredClaimNames.UniqueName, role),
+                new Claim(ClaimTypes.Role, role),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -116,7 +123,5 @@ namespace E_CommerceSystem.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-
     }
 }
