@@ -62,10 +62,26 @@ namespace E_CommerceSystem.Mapping.Profiles
          s.OrderProducts.Select(op => op.Quantity).FirstOrDefault()));
 
             // ===================== USERS =====================
+            // Input DTO -> Entity
+            // UserDTO mapping (already exists)
             CreateMap<UserDTO, User>()
-                .ForMember(u => u.Password, o => o.Ignore())   // hash in service
-                .ForMember(u => u.CreatedAt, o => o.Ignore());  // set in service
+                .ForMember(u => u.Password, o => o.Ignore())
+                .ForMember(u => u.CreatedAt, o => o.Ignore());
             CreateMap<User, UserDTO>();
+
+            CreateMap<RegisterUserDTO, User>()
+                .ForMember(u => u.Password, o => o.Ignore())   // hash in service
+                .ForMember(u => u.CreatedAt, o => o.MapFrom(src => DateTime.UtcNow));
+            // User -> LoginResponseDTO
+            CreateMap<User, LoginResponseDTO>()
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => "Login successful"))
+                .ForMember(dest => dest.AccessToken, opt => opt.Ignore())   // Day-2
+                .ForMember(dest => dest.RefreshToken, opt => opt.Ignore()); // Day-2
+
+            CreateMap<UpdateOrderDTO, Order>();
+            CreateMap<UpdateProductDTO, Product>();
+
+
         }
     }
 }

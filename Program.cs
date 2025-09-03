@@ -22,6 +22,7 @@ namespace E_CommerceSystem
             // Add services to the container.
             builder.Services.AddScoped<IUserRepo,UserRepo>();
             builder.Services.AddScoped<IUserService,UserService>();
+            builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
 
 
             builder.Services.AddScoped<IProductRepo, ProductRepo>();

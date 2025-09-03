@@ -13,8 +13,12 @@ namespace E_CommerceSystem.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        public OrderController(IOrderService orderService) => _orderService = orderService;
-
+        private readonly IOrderSummaryService _summaryService;
+        public OrderController(IOrderService orderService, IOrderSummaryService summaryService)
+        {
+            _orderService = orderService;
+            _summaryService = summaryService;
+        }
         [HttpPost("PlaceOrder")]
         public IActionResult PlaceOrder([FromBody] List<OrderItemDTO> items)
         {
@@ -98,6 +102,13 @@ namespace E_CommerceSystem.Controllers
                 return subClaim?.Value;
             }
             throw new UnauthorizedAccessException("Invalid or unreadable token.");
+        }
+        [HttpGet("summary")]
+        [Authorize(Roles = "Admin,Manager")] // optional: restrict to roles later
+        public async Task<IActionResult> Summary(DateTime from, DateTime to)
+        {
+            var result = await _summaryService.GetSummaryAsync(from, to);
+            return Ok(result);
         }
 
 

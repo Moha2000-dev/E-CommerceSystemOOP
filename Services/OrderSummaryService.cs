@@ -15,7 +15,7 @@ namespace E_CommerceSystem.Services
         {
             // Filter orders in the given date range
             var orders = _db.Orders
-                .Include(o => o.user) // 👈 lowercase navigation property
+                .Include(o => o.user) 
                 .Include(o => o.OrderProducts)
                 .ThenInclude(op => op.product)
                 .Where(o => o.OrderDate >= from && o.OrderDate < to);

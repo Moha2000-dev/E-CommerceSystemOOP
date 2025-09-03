@@ -9,6 +9,9 @@ namespace E_CommerceSystem.Models
     {
         [Key] 
         public int OID { get; set; }
+        // This ensures EF will throw a DbUpdateConcurrencyException if two users try to update the same order at once
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
 
         public DateTime OrderDate { get; set; }
 

@@ -40,6 +40,13 @@ namespace E_CommerceSystem
                 .WithMany(p => p.OrderProducts)   // add collection to Product if you want
                 .HasForeignKey(op => op.PID)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Order>()
+                .Property(o => o.RowVersion)
+                .IsRowVersion();
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.RowVersion)
+                .IsRowVersion();
 
 
         }

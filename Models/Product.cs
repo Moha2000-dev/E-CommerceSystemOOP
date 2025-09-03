@@ -10,6 +10,8 @@ namespace E_CommerceSystem.Models
 
         [Required]
         public string ProductName { get; set; }
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
 
         public string Description { get; set; }
 
