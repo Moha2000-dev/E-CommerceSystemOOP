@@ -1,4 +1,3 @@
-
 using E_CommerceSystem.Repositories;
 using E_CommerceSystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,10 +9,6 @@ using AutoMapper.QueryableExtensions;
 using E_CommerceSystem.Infrastructure.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-
 
 namespace E_CommerceSystem
 {
@@ -25,89 +20,62 @@ namespace E_CommerceSystem
             builder.Services.AddControllers();
 
             // Add services to the container.
-            builder.Services.AddScoped<IUserRepo,UserRepo>();
-            builder.Services.AddScoped<IUserService,UserService>();
+            builder.Services.AddScoped<IUserRepo, UserRepo>();
+            builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
-
-
             builder.Services.AddScoped<IProductRepo, ProductRepo>();
             builder.Services.AddScoped<IProductService, ProductService>();
-
             builder.Services.AddScoped<IOrderProductsRepo, OrderProductsRepo>();
             builder.Services.AddScoped<IOrderProductsService, OrderProductsService>();
-
             builder.Services.AddScoped<IOrderRepo, OrderRepo>();
             builder.Services.AddScoped<IOrderService, OrderService>();
-
             builder.Services.AddScoped<IReviewRepo, ReviewRepo>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
-
             builder.Services.AddAutoMapper(typeof(Program).Assembly);
-
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<ISupplierService, SupplierService>();
-            builder.Services.AddScoped<IProductService, ProductService>();           // if you use it
-            builder.Services.AddScoped<IProductQueryService, ProductQueryService>(); // for paging list
-            builder.Services.AddScoped<IOrderService, OrderService>();
-            builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<ICookieTokenWriter, CookieTokenWriter>();
-
-
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
-            // Add JWT Authentication
+            // JWT Authentication setup
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
 
-          
-            builder.Services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer", opts =>
-                {
-                    opts.RequireHttpsMetadata = true;
-                    opts.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-                    };
-                    // 
-                    opts.Events = new JwtBearerEvents
-                    {
-                        OnMessageReceived = ctx =>
-                        {
-                            if (ctx.Request.Cookies.TryGetValue("access_token", out var jwt))
-                                ctx.Token = jwt;
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
-
-            builder.Services.AddAuthorization();
-        
-
-
-
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-            var secret = builder.Configuration["JwtSettings:SecretKey"];
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(o =>
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    o.TokenValidationParameters = new TokenValidationParameters
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                    RoleClaimType = ClaimTypes.Role
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
                     {
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
-                        RoleClaimType = ClaimTypes.Role
-                    };
-                });
+                        if (ctx.Request.Cookies.TryGetValue("access_token", out var jwt))
+                            ctx.Token = jwt;
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
             builder.Services.AddAuthorization(options =>
             {
@@ -115,27 +83,8 @@ namespace E_CommerceSystem
                 options.AddPolicy("AdminOrManager", p => p.RequireRole("Admin", "Manager"));
             });
 
-
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-                    .AddJwtBearer(options =>
-                    {
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuer = false, // You can set this to true if you want to validate the issuer.
-                            ValidateAudience = false, // You can set this to true if you want to validate the audience.
-                            ValidateLifetime = true, // Ensures the token hasn't expired.
-                            ValidateIssuerSigningKey = true, // Ensures the token is properly signed.
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)) // Match with your token generation key.
-                        };
-                    });
-
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // Swagger/OpenAPI configuration
             builder.Services.AddEndpointsApiExplorer();
-
             builder.Services.AddSwaggerGen(c =>
             {
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -148,21 +97,21 @@ namespace E_CommerceSystem
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
             });
-            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -171,19 +120,14 @@ namespace E_CommerceSystem
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            
+
             app.UseHttpsRedirection();
-
-            app.UseAuthentication(); //jwt check middleware
+            app.UseAuthentication();
             app.UseAuthorization();
-            app.UseStaticFiles(); // make sure this is present (IMAGES)
-
-
+            app.UseStaticFiles();
             app.MapControllers();
 
-
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-
 
             app.Run();
         }
