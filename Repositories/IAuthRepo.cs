@@ -8,5 +8,7 @@ namespace E_CommerceSystem.Repositories
         Task<User?> GetUserByUsernameAsync(string username);
         Task<User?> GetUserByEmailAsync(string email);
         Task<User> AddUserAsync(User user);
+
+        Task<User?> GetUserByIdAsync(int uid);
     }
 }

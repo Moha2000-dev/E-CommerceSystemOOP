@@ -29,7 +29,7 @@ namespace E_CommerceSystem.Models
         public string Phone {  get; set; }
 
         [Required]
-        public UserRole Role { get; set; } = UserRole.Customer;
+        public UserRole Role { get; set; } 
 
         public DateTime CreatedAt { get; set; }
 

@@ -10,6 +10,9 @@ using AutoMapper.QueryableExtensions;
 using E_CommerceSystem.Infrastructure.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 
 namespace E_CommerceSystem
@@ -48,7 +51,8 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
-            
+            builder.Services.AddScoped<ICookieTokenWriter, CookieTokenWriter>();
+
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -57,6 +61,35 @@ namespace E_CommerceSystem
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
 
+          
+            builder.Services.AddAuthentication("Bearer")
+                .AddJwtBearer("Bearer", opts =>
+                {
+                    opts.RequireHttpsMetadata = true;
+                    opts.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                        ValidAudience = builder.Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                    };
+                    // 
+                    opts.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = ctx =>
+                        {
+                            if (ctx.Request.Cookies.TryGetValue("access_token", out var jwt))
+                                ctx.Token = jwt;
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+        
 
 
 
@@ -138,7 +171,7 @@ namespace E_CommerceSystem
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            
             app.UseHttpsRedirection();
 
             app.UseAuthentication(); //jwt check middleware

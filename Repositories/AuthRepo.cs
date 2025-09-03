@@ -20,5 +20,7 @@ namespace E_CommerceSystem.Repositories
             await _db.SaveChangesAsync();
             return user;
         }
+        public Task<User?> GetUserByIdAsync(int uid)
+       => _db.Users.SingleOrDefaultAsync(u => u.UID == uid);
     }
 }
