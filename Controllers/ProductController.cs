@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using E_CommerceSystem.Exceptions;
 using E_CommerceSystem.Models;
 using E_CommerceSystem.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -43,18 +44,26 @@ namespace E_CommerceSystem.Controllers
         [HttpPut("UpdateProduct/{productId:int}")]
         public IActionResult UpdateProduct(int productId, [FromBody] ProductDTO productInput)
         {
-            if (productInput is null) return BadRequest("Product data is required.");
+            try
+            {
+                if (productInput is null) return BadRequest("Product data is required.");
 
-            var product = _productService.GetProductById(productId);
-            if (product is null) return NotFound("Product not found.");
+                var product = _productService.GetProductById(productId);
+                if (product is null) return NotFound("Product not found.");
 
-            // overlay DTO -> tracked entity
-            _mapper.Map(productInput, product);
+                // overlay DTO -> tracked entity
+                _mapper.Map(productInput, product);
 
-            _productService.UpdateProduct(product);
+                _productService.UpdateProduct(product);
 
-            var result = _mapper.Map<ProductDTO>(product);
-            return Ok(result);
+                var result = _mapper.Map<ProductDTO>(product);
+                return Ok(result);
+            }
+            catch (ConcurrencyException ex)
+            {
+                return Conflict(new { message = ex.Message }); // 409 Conflict
+            }
+
         }
 
         [AllowAnonymous]
