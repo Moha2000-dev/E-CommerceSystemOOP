@@ -45,6 +45,8 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<IProductQueryService, ProductQueryService>(); // for paging list
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+            
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -113,9 +115,14 @@ namespace E_CommerceSystem
 
             app.UseAuthentication(); //jwt check middleware
             app.UseAuthorization();
+            app.UseStaticFiles(); // make sure this is present (IMAGES)
 
 
             app.MapControllers();
+
+
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 
             app.Run();
         }
