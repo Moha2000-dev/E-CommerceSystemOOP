@@ -23,9 +23,9 @@ namespace E_CommerceSystem.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
+        public async Task<IActionResult> Login([FromBody] UserDTO dto)
         {
-            var resp = await _authService.LoginAsync(dto.Username, dto.Password);
+            var resp = await _authService.LoginAsync(dto.UName, dto.Password);
             if (resp is null) return Unauthorized("Invalid credentials");
             return Ok(resp); // includes JWT token
         }

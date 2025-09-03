@@ -5,6 +5,9 @@ namespace E_CommerceSystem.Models
 {
     public class User
     {
+
+        public enum UserRole { Customer = 0, Manager = 1, Admin = 2 }
+
         [Key]
         public int UID { get; set; }
 
@@ -26,7 +29,7 @@ namespace E_CommerceSystem.Models
         public string Phone {  get; set; }
 
         [Required]
-        public string Role { get; set; }
+        public UserRole Role { get; set; } = UserRole.Customer;
 
         public DateTime CreatedAt { get; set; }
 
