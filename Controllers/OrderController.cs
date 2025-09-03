@@ -9,6 +9,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using QuestPdfDoc = QuestPDF.Fluent.Document;
+using E_CommerceSystem.Exceptions;
 
 
 
@@ -75,12 +76,11 @@ namespace E_CommerceSystem.Controllers
                 var ok = _orderService.UpdateStatus(orderId, uid, status);
                 return ok ? Ok("Status updated.") : NotFound("Order not found, not owned, or cannot update.");
             }
-            catch (Exception ex)
+            catch (ConcurrencyException ex)
             {
-                return StatusCode(500, $"Error updating status. {ex.Message}");
+                return Conflict(new { message = ex.Message });
             }
         }
-
         [HttpPost("{orderId:int}/cancel")]
         public IActionResult Cancel(int orderId)
         {
