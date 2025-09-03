@@ -11,5 +11,6 @@
         // Day-2 placeholder (tokens will be filled later)
         public string? AccessToken { get; set; }
         public string? RefreshToken { get; set; }
+        public string Token { get; set; } = null!;
     }
 }

@@ -81,6 +81,12 @@ namespace E_CommerceSystem.Mapping.Profiles
             CreateMap<UpdateOrderDTO, Order>();
             CreateMap<UpdateProductDTO, Product>();
 
+            // ===================== ORDER PRODUCTS =====================
+            CreateMap<RegisterUserDTO, User>();            // Password will be set manually (hashed)
+            CreateMap<User, UserDTO>();
+            CreateMap<User, LoginResponseDTO>()
+                .ForMember(d => d.Token, o => o.Ignore()); // set later after issuing JWT
+
 
         }
     }
