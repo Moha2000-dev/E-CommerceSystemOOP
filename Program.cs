@@ -113,6 +113,17 @@ namespace E_CommerceSystem
                     }
                 });
             });
+            builder.Host.UseSerilog();
+            // Configure Serilog before adding services
+            builder.Host.UseSerilog((context, services, configuration) =>
+            {
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)   // read from appsettings.json
+                    .ReadFrom.Services(services)                     // dependency injection
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console()
+                    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
+            });
 
             var app = builder.Build();
 
@@ -127,7 +138,7 @@ namespace E_CommerceSystem
                 .ReadFrom.Configuration(builder.Configuration)
                 .CreateLogger();
 
-            builder.Host.UseSerilog();
+            
 
             app.UseHttpsRedirection();
             app.UseAuthentication();
