@@ -89,7 +89,7 @@ namespace E_CommerceSystem.Services
 
             return items;
         }
-
+        // update order status for login user
         public bool UpdateStatus(int orderId, int uid, OrderStatus status)
         {
             var order = _orderRepo.GetOrderById(orderId);
@@ -100,7 +100,7 @@ namespace E_CommerceSystem.Services
             _orderRepo.UpdateOrder(order);
             return true;
         }
-
+        // cancel order for login user
         public bool Cancel(int orderId, int uid)
         {
             var order = _orderRepo.GetOrderById(orderId);
@@ -125,7 +125,7 @@ namespace E_CommerceSystem.Services
         }
 
 
-
+        //get order by user id
         public IEnumerable<Order> GetOrderByUserId(int uid)
         {
             var order = _orderRepo.GetOrderByUserId(uid);
@@ -135,6 +135,8 @@ namespace E_CommerceSystem.Services
             return order;
         }
 
+
+        //delete order by order id
         public void DeleteOrder(int oid)
         {
             var order = _orderRepo.GetOrderById(oid);
