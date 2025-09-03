@@ -15,13 +15,18 @@ namespace E_CommerceSystem.Services
         private readonly IProductService _productService;
         private readonly IOrderProductsService _orderProductsService;
         private readonly IMapper _mapper;
+        private readonly IEmailSender _email;
+        private readonly IUserService _userService;
 
-        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper)
+        public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email,
+                    IUserService userService)
         {
             _orderRepo = orderRepo;
             _productService = productService;
             _orderProductsService = orderProductsService;
             _mapper = mapper;
+            _email = email;
+            _userService = userService;
         }
 
         //get all orders for login user
@@ -98,6 +103,15 @@ namespace E_CommerceSystem.Services
 
             order.Status = status;
             _orderRepo.UpdateOrder(order);
+            try
+            {
+                var user = _userService.GetUserById(uid);
+                _ = _email.SendAsync(
+                    user.Email,
+                    $"Order #{order.OID} placed",
+                    $"<h3>Thanks for your order #{order.OID}</h3><p>Total: {order.TotalAmount:C}</p>");
+            }
+            catch { /* optional: log */ }
             return true;
         }
         // cancel order for login user
@@ -121,6 +135,17 @@ namespace E_CommerceSystem.Services
 
             order.Status = OrderStatus.Cancelled;
             _orderRepo.UpdateOrder(order);
+            // --- send email (fire-and-forget) ---
+            try
+            {
+                var user = _userService.GetUserById(uid);
+                _ = _email.SendAsync(
+                    user.Email,
+                    $"Order #{order.OID} cancelled",
+                    $"<p>Your order #{order.OID} has been cancelled. A refund will be processed if applicable.</p>");
+            }
+            catch { /* optional: log */ }
+
             return true;
         }
 

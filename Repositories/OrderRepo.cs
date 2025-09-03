@@ -90,6 +90,40 @@ namespace E_CommerceSystem.Repositories
                 throw new InvalidOperationException($"Database error: {ex.Message}");
             }
         }
+        public bool UpdateStatus(int orderId, int uid, OrderStatus status)
+        {
+            try
+            {
+                var order = _context.Orders.FirstOrDefault(o => o.OID == orderId && o.UID == uid);
+                if (order is null) return false;
+                order.Status = status;
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Database error: {ex.Message}");
+            }
+        }
+
+        public bool Cancel(int orderId, int uid)
+        {
+            try
+            {
+                var order = _context.Orders.FirstOrDefault(o => o.OID == orderId && o.UID == uid);
+                if (order is null) return false;
+
+                // NOTE: stock restore & rules belong in the service; this just flips the flag.
+                order.Status = OrderStatus.Cancelled;
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Database error: {ex.Message}");
+            }
+        }
+
 
     }
 }

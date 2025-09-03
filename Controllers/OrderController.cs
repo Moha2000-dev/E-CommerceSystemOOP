@@ -4,6 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using E_CommerceSystem.Models;
 using E_CommerceSystem.Services;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection.Metadata;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using QuestPdfDoc = QuestPDF.Fluent.Document;
+
+
 
 namespace E_CommerceSystem.Controllers
 {
@@ -99,6 +106,83 @@ namespace E_CommerceSystem.Controllers
             }
             throw new UnauthorizedAccessException("Invalid or unreadable token.");
         }
+
+        [HttpGet("{orderId:int}/invoice-pdf")]
+        public IActionResult InvoicePdf(int orderId)
+        {
+            var uidStr = User.FindFirst("sub")?.Value
+                         ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(uidStr, out var uid))
+                return Unauthorized("User id missing.");
+
+            var items = _orderService.GetOrderById(orderId, uid).ToList();
+            if (!items.Any()) return NotFound("Order not found or not owned by user.");
+
+            var orderDate = items.First().OrderDate;
+            var total = items.Sum(i => i.TotalAmount);
+
+            var pdf = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(36);
+                    page.Size(PageSizes.A4);
+                    page.Header().Text($"Invoice #{orderId}")
+                        .SemiBold().FontSize(20).FontColor(Colors.Black);
+
+                    page.Content().Column(col =>
+                    {
+                        col.Spacing(10);
+
+                        col.Item().Text($"Date: {orderDate:yyyy-MM-dd}").FontSize(10);
+
+                        col.Item().Table(table =>
+                        {
+                            // define helpers ONCE for the whole table scope
+                            Func<IContainer, IContainer> CellHeader = c =>
+                                c.DefaultTextStyle(x => x.SemiBold())
+                                 .Padding(6).Background(Colors.Grey.Lighten3)
+                                 .Border(1).BorderColor(Colors.Grey.Lighten2);
+
+                            Func<IContainer, IContainer> CellBody = c =>
+                                c.Padding(6).Border(1).BorderColor(Colors.Grey.Lighten3);
+
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(6); // Product
+                                columns.RelativeColumn(2); // Qty
+                                columns.RelativeColumn(3); // Line total
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(CellHeader).Text("Product");
+                                header.Cell().Element(CellHeader).AlignCenter().Text("Qty");
+                                header.Cell().Element(CellHeader).AlignRight().Text("Line Total");
+                            });
+
+                            foreach (var it in items)
+                            {
+                                table.Cell().Element(CellBody).Text(it.ProductName);
+                                table.Cell().Element(CellBody).AlignCenter().Text(it.Quantity.ToString());
+                                table.Cell().Element(CellBody).AlignRight().Text($"{it.TotalAmount:C}");
+                            }
+
+                            // footer total row
+                            table.Cell().ColumnSpan(2).Element(CellBody).AlignRight().Text("Total").SemiBold();
+                            table.Cell().Element(CellBody).AlignRight().Text($"{total:C}").SemiBold();
+                        });
+
+
+                        col.Item().Text("Thanks for your purchase!")
+                                  .FontSize(10).FontColor(Colors.Grey.Darken1);
+                    });
+                });
+            }).GeneratePdf();
+
+            return File(pdf, "application/pdf", $"invoice_{orderId}.pdf");
+        }
+
 
 
     }
