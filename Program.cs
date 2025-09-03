@@ -112,6 +112,7 @@ namespace E_CommerceSystem
 
             app.UseAuthentication(); //jwt check middleware
             app.UseAuthorization();
+            app.UseStaticFiles(); // make sure this is present (IMAGES)
 
 
             app.MapControllers();

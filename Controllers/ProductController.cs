@@ -88,5 +88,30 @@ namespace E_CommerceSystem.Controllers
             var dto = _mapper.Map<ProductDTO>(product);
             return Ok(dto);
         }
+
+
+        [Authorize(Roles = "admin")]
+        [HttpPost("{productId:int}/image")]
+        public IActionResult UploadImage(int productId, [FromForm] IFormFile file, [FromServices] IWebHostEnvironment env)
+        {
+            if (file is null || file.Length == 0) return BadRequest("No file.");
+
+            var product = _productService.GetProductById(productId);
+            if (product is null) return NotFound("Product not found.");
+
+            var webRoot = env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploads = Path.Combine(webRoot, "uploads");
+            Directory.CreateDirectory(uploads);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var fullPath = Path.Combine(uploads, fileName);
+            using (var stream = System.IO.File.Create(fullPath)) file.CopyTo(stream);
+
+            product.ImageUrl = $"/uploads/{fileName}";
+            _productService.UpdateProduct(product);
+
+            return Ok(new { product.PID, product.ImageUrl });
+        }
+
     }
 }
