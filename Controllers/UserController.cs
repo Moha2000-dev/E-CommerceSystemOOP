@@ -67,7 +67,7 @@ namespace E_CommerceSystem.Controllers
                 var user = _userService.GetUSer(email, password);
                 if (user == null) return Unauthorized("Invalid credentials.");
 
-                string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role);
+                string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role.ToString());
                 return Ok(token);
             }
             catch (Exception ex)

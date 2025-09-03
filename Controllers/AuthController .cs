@@ -23,11 +23,29 @@ namespace E_CommerceSystem.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
+        public async Task<IActionResult> Login([FromBody] UserDTO dto)
         {
-            var resp = await _authService.LoginAsync(dto.Username, dto.Password);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var resp = await _authService.LoginWithCookiesAsync(dto.UName, dto.Password, Response, ip);
             if (resp is null) return Unauthorized("Invalid credentials");
-            return Ok(resp); // includes JWT token
+            return Ok(resp); // التوكن أيضًا محفوظ في الكوكي
+        }
+
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var resp = await _authService.RefreshAsync(Request, Response, ip);
+            return Ok(resp);
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _authService.LogoutAsync(Request, Response);
+            return Ok(new { message = "Logged out" });
         }
     }
 }
