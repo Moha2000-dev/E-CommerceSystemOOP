@@ -8,6 +8,8 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using AutoMapper.QueryableExtensions;
 using E_CommerceSystem.Infrastructure.Repositories;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 
 namespace E_CommerceSystem
@@ -54,6 +56,32 @@ namespace E_CommerceSystem
             // Add JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
+
+
+
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+            var secret = builder.Configuration["JwtSettings:SecretKey"];
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(o =>
+                {
+                    o.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+                        RoleClaimType = ClaimTypes.Role
+                    };
+                });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+                options.AddPolicy("AdminOrManager", p => p.RequireRole("Admin", "Manager"));
+            });
+
 
             builder.Services.AddAuthentication(options =>
             {

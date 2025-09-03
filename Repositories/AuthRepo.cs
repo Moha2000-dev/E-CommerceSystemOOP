@@ -6,16 +6,13 @@ namespace E_CommerceSystem.Repositories
     public class AuthRepo : IAuthRepo
     {
         private readonly ApplicationDbContext _db;
+        public AuthRepo(ApplicationDbContext db) => _db = db;
 
-        public AuthRepo(ApplicationDbContext db)
-        {
-            _db = db;
-        }
+        public Task<User?> GetUserByUsernameAsync(string username) =>
+            _db.Users.FirstOrDefaultAsync(u => u.UName == username);
 
-        public async Task<User?> GetUserByUsernameAsync(string username)
-        {
-            return await _db.Users.FirstOrDefaultAsync(u => u.UName == username);
-        }
+        public Task<User?> GetUserByEmailAsync(string email) =>
+            _db.Users.FirstOrDefaultAsync(u => u.Email == email);
 
         public async Task<User> AddUserAsync(User user)
         {
