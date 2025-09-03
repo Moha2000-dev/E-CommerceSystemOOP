@@ -10,7 +10,8 @@ using AutoMapper.QueryableExtensions;
 using E_CommerceSystem.Infrastructure.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
+using E_CommerceSystem.Middleware;
+using Serilog;
 
 namespace E_CommerceSystem
 {
@@ -138,18 +139,26 @@ namespace E_CommerceSystem
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+            //  Configure Serilog from appsettings.json
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger();
+
+            builder.Host.UseSerilog();
 
             app.UseHttpsRedirection();
 
             app.UseAuthentication(); //jwt check middleware
             app.UseAuthorization();
             app.UseStaticFiles(); // make sure this is present (IMAGES)
+            app.UseErrorHandlingMiddleware();// 
 
 
             app.MapControllers();
 
 
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+            Log.Information("E_CommerceSystem starting up");
 
 
             app.Run();

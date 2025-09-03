@@ -17,9 +17,9 @@ namespace E_CommerceSystem.Services
         private readonly IMapper _mapper;
         private readonly IEmailSender _email;
         private readonly IUserService _userService;
-
+        private readonly ILogger<OrderService> _logger;
         public OrderService(IOrderRepo orderRepo, IProductService productService, IOrderProductsService orderProductsService, IMapper mapper, IEmailSender email,
-                    IUserService userService)
+                    IUserService userService, ILogger<OrderService> logger)
         {
             _orderRepo = orderRepo;
             _productService = productService;
@@ -27,6 +27,7 @@ namespace E_CommerceSystem.Services
             _mapper = mapper;
             _email = email;
             _userService = userService;
+            _logger = logger;
         }
 
         //get all orders for login user
@@ -118,34 +119,30 @@ namespace E_CommerceSystem.Services
         public bool Cancel(int orderId, int uid)
         {
             var order = _orderRepo.GetOrderById(orderId);
-            if (order is null || order.UID != uid) return false;
+            if (order == null)
+            {
+                _logger.LogWarning("User {UserId} tried to cancel non-existing order {OrderId}", uid, orderId);
+                return false;
+            }
 
-            // allow cancel only when Pending (adjust if you want Paid to be cancellable)
-            if (order.Status != OrderStatus.Pending) return false;
+            if (order.Status != OrderStatus.Pending)
+            {
+                _logger.LogWarning("User {UserId} tried to cancel order {OrderId} with status {Status}", uid, orderId, order.Status);
+                return false;
+            }
 
-            // restore stock
-            var items = _orderProductsService.GetOrdersByOrderId(order.OID) ?? new List<OrderProducts>();
-            foreach (var op in items)
+            foreach (var op in _orderProductsService.GetOrdersByOrderId(order.OID))
             {
                 var product = _productService.GetProductById(op.PID);
-                if (product is null) continue;
                 product.Stock += op.Quantity;
                 _productService.UpdateProduct(product);
+                _logger.LogInformation("Restored stock for Product {ProductId} by {Qty}", op.PID, op.Quantity);
             }
 
             order.Status = OrderStatus.Cancelled;
             _orderRepo.UpdateOrder(order);
-            // --- send email (fire-and-forget) ---
-            try
-            {
-                var user = _userService.GetUserById(uid);
-                _ = _email.SendAsync(
-                    user.Email,
-                    $"Order #{order.OID} cancelled",
-                    $"<p>Your order #{order.OID} has been cancelled. A refund will be processed if applicable.</p>");
-            }
-            catch { /* optional: log */ }
 
+            _logger.LogInformation("User {UserId} cancelled order {OrderId}", uid, orderId);
             return true;
         }
 

@@ -4,14 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using E_CommerceSystem.Models;
 using E_CommerceSystem.Services;
 using System.IdentityModel.Tokens.Jwt;
-using System.Reflection.Metadata;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using QuestPdfDoc = QuestPDF.Fluent.Document;
-using E_CommerceSystem.Exceptions;
-
-
 
 namespace E_CommerceSystem.Controllers
 {
@@ -22,19 +17,24 @@ namespace E_CommerceSystem.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IOrderSummaryService _summaryService;
-        public OrderController(IOrderService orderService, IOrderSummaryService summaryService)
+        private readonly ILogger<OrderController> _logger;
+        public OrderController(IOrderService orderService, IOrderSummaryService summaryService, ILogger<OrderController> logger)
         {
             _orderService = orderService;
             _summaryService = summaryService;
+            _logger = logger;
         }
+
         [HttpPost("PlaceOrder")]
         public IActionResult PlaceOrder([FromBody] List<OrderItemDTO> items)
         {
-            if (items is null || items.Count == 0) return BadRequest("Order items cannot be empty.");
+            if (items is null || items.Count == 0)
+                return BadRequest("Order items cannot be empty.");
 
-            var uid = GetUserId();                    // <- from claims
+            var uid = GetUserId();
             _orderService.PlaceOrder(items, uid);
-
+            _logger.LogInformation("User {UserId} placing order with {ItemCount} items", uid, items.Count);
+            _logger.LogInformation("Order placed successfully by User {UserId}", uid);
             return Ok("Order placed successfully.");
         }
 
@@ -42,7 +42,7 @@ namespace E_CommerceSystem.Controllers
         public IActionResult GetAllOrders()
         {
             var uid = GetUserId();
-            var result = _orderService.GetAllOrders(uid);   // should return DTOs
+            var result = _orderService.GetAllOrders(uid);
             return Ok(result);
         }
 
@@ -50,68 +50,32 @@ namespace E_CommerceSystem.Controllers
         public IActionResult GetOrderById(int orderId)
         {
             var uid = GetUserId();
-            var result = _orderService.GetOrderById(orderId, uid); // DTO
+            var result = _orderService.GetOrderById(orderId, uid);
             return result is not null ? Ok(result) : NotFound();
         }
 
-        private int GetUserId()
-        {
-            // prefer NameIdentifier; fall back to "sub"
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                     User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(id) || !int.TryParse(id, out var uid))
-                throw new UnauthorizedAccessException("User id not found in token.");
-            return uid;
-        }
         [HttpPatch("{orderId:int}/status")]
         public IActionResult UpdateStatus(int orderId, [FromQuery] OrderStatus status)
         {
-            try
-            {
-                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var userId = GetUserIdFromToken(token);
-                var uid = int.Parse(userId);
-
-                var ok = _orderService.UpdateStatus(orderId, uid, status);
-                return ok ? Ok("Status updated.") : NotFound("Order not found, not owned, or cannot update.");
-            }
-            catch (ConcurrencyException ex)
-            {
-                return Conflict(new { message = ex.Message });
-            }
+            var uid = GetUserId();
+            var ok = _orderService.UpdateStatus(orderId, uid, status);
+            return ok
+                ? Ok("Status updated.")
+                : NotFound("Order not found, not owned, or cannot update.");
         }
+
         [HttpPost("{orderId:int}/cancel")]
         public IActionResult Cancel(int orderId)
         {
-            try
-            {
-                var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var userId = GetUserIdFromToken(token);
-                var uid = int.Parse(userId);
-
-                var ok = _orderService.Cancel(orderId, uid);
-                return ok ? Ok("Order cancelled and stock restored.") : BadRequest("Cannot cancel this order.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error cancelling order. {ex.Message}");
-            }
+            var uid = GetUserId();
+            var ok = _orderService.Cancel(orderId, uid);
+            return ok
+                ? Ok("Order cancelled and stock restored.")
+                : BadRequest("Cannot cancel this order.");
         }
 
-        private string? GetUserIdFromToken(string token)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            if (handler.CanReadToken(token))
-            {
-                var jwtToken = handler.ReadJwtToken(token);
-                var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub");
-                return subClaim?.Value;
-            }
-            throw new UnauthorizedAccessException("Invalid or unreadable token.");
-        }
         [HttpGet("summary")]
-        [Authorize(Roles = "Admin,Manager")] // optional: restrict to roles later
+        [Authorize(Roles = "admin,Manager")]
         public async Task<IActionResult> Summary(DateTime from, DateTime to)
         {
             var result = await _summaryService.GetSummaryAsync(from, to);
@@ -121,18 +85,15 @@ namespace E_CommerceSystem.Controllers
         [HttpGet("{orderId:int}/invoice-pdf")]
         public IActionResult InvoicePdf(int orderId)
         {
-            var uidStr = User.FindFirst("sub")?.Value
-                         ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(uidStr, out var uid))
-                return Unauthorized("User id missing.");
-
+            var uid = GetUserId();
             var items = _orderService.GetOrderById(orderId, uid).ToList();
-            if (!items.Any()) return NotFound("Order not found or not owned by user.");
+            if (!items.Any())
+                return NotFound("Order not found or not owned by user.");
 
             var orderDate = items.First().OrderDate;
             var total = items.Sum(i => i.TotalAmount);
 
-            var pdf = QuestPDF.Fluent.Document.Create(container =>
+            var pdf = Document.Create(container =>
             {
                 container.Page(page =>
                 {
@@ -149,7 +110,6 @@ namespace E_CommerceSystem.Controllers
 
                         col.Item().Table(table =>
                         {
-                            // define helpers ONCE for the whole table scope
                             Func<IContainer, IContainer> CellHeader = c =>
                                 c.DefaultTextStyle(x => x.SemiBold())
                                  .Padding(6).Background(Colors.Grey.Lighten3)
@@ -179,11 +139,9 @@ namespace E_CommerceSystem.Controllers
                                 table.Cell().Element(CellBody).AlignRight().Text($"{it.TotalAmount:C}");
                             }
 
-                            // footer total row
                             table.Cell().ColumnSpan(2).Element(CellBody).AlignRight().Text("Total").SemiBold();
                             table.Cell().Element(CellBody).AlignRight().Text($"{total:C}").SemiBold();
                         });
-
 
                         col.Item().Text("Thanks for your purchase!")
                                   .FontSize(10).FontColor(Colors.Grey.Darken1);
@@ -194,7 +152,16 @@ namespace E_CommerceSystem.Controllers
             return File(pdf, "application/pdf", $"invoice_{orderId}.pdf");
         }
 
+        // 🔹 Helper: get logged-in user id from claims
+        private int GetUserId()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                     User.FindFirst("sub")?.Value;
 
+            if (string.IsNullOrWhiteSpace(id) || !int.TryParse(id, out var uid))
+                throw new UnauthorizedAccessException("User id not found in token.");
 
+            return uid;
+        }
     }
 }
