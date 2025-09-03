@@ -42,6 +42,13 @@ namespace E_CommerceSystem
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            // Auth Service
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+            // Also make sure you register these if you use them:
+            builder.Services.AddScoped<IAuthRepo, AuthRepo>();
+            builder.Services.AddScoped<ICookieTokenWriter, CookieTokenWriter>();
+
 
             // JWT Authentication setup
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
