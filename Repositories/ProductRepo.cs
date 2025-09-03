@@ -1,4 +1,6 @@
-﻿using E_CommerceSystem.Models;
+﻿using E_CommerceSystem.Exceptions;
+using E_CommerceSystem.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 namespace E_CommerceSystem.Repositories
@@ -55,9 +57,9 @@ namespace E_CommerceSystem.Repositories
                 _context.Products.Update(product);
                 _context.SaveChanges();
             }
-            catch (Exception ex)
+            catch (DbUpdateConcurrencyException)
             {
-                throw new InvalidOperationException($"Database error: {ex.Message}");
+                throw new ConcurrencyException("The product was modified by another user. Please refresh and try again.");
             }
         }
 

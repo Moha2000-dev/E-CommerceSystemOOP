@@ -1,4 +1,5 @@
-﻿using E_CommerceSystem.Models;
+﻿using E_CommerceSystem.Exceptions;
+using E_CommerceSystem.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace E_CommerceSystem.Repositories
@@ -85,9 +86,9 @@ namespace E_CommerceSystem.Repositories
                 _context.Orders.Update(order);
                 _context.SaveChanges();
             }
-            catch (Exception ex)
+            catch (DbUpdateConcurrencyException)
             {
-                throw new InvalidOperationException($"Database error: {ex.Message}");
+                throw new ConcurrencyException("The order was modified by another user. Please refresh and try again.");
             }
         }
         public bool UpdateStatus(int orderId, int uid, OrderStatus status)
