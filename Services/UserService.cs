@@ -29,17 +29,19 @@ namespace E_CommerceSystem.Services
         {
             return _userRepo.GetAllUsers();
         }
-        public User GetUSer(string email, string password)
+        public User GetUser(string email, string password)
         {
-            var user = _userRepo.GetUserByEmail(email);
+            var user = _userRepo.GetUserByEmail(email); // fetch only by email
+            if (user == null)
+                return null;
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
-            {
-                throw new UnauthorizedAccessException("Invalid email or password.");
-            }
+            // verify plain password against hash
+            if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
+                return null;
 
             return user;
         }
+
 
 
         public User GetUserById(int uid)

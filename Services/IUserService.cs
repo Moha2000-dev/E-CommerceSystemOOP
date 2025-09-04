@@ -7,7 +7,7 @@ namespace E_CommerceSystem.Services
         void AddUser(User user);
         void DeleteUser(int uid);
         IEnumerable<User> GetAllUsers();
-        User GetUSer(string email, string password);
+        User GetUser(string email, string password);
         User GetUserById(int uid);
         void UpdateUser(User user);
     }

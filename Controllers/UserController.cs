@@ -56,22 +56,23 @@ namespace E_CommerceSystem.Controllers
         }
         // keeping your GET login shape (though POST is recommended)
         [AllowAnonymous]
-        [HttpGet("Login")]
-        public IActionResult Login([FromQuery] string email, [FromQuery] string password)
+        [HttpPost("Login")]
+        public IActionResult Login([FromBody] LoginRequestDTO dto)
         {
             try
             {
-                var user = _userService.GetUSer(email, password);
+                var user = _userService.GetUser(dto.Email, dto.Password);
                 if (user == null) return Unauthorized("Invalid credentials.");
 
                 string token = GenerateJwtToken(user.UID.ToString(), user.UName, user.Role.ToString());
-                return Ok(token);
+                return Ok(new { token });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"An error occurred while login. {ex.Message}");
             }
         }
+
 
         [HttpGet("GetUserById/{userId:int}")]
         public IActionResult GetUserById(int userId)
