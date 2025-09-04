@@ -34,9 +34,7 @@ namespace E_CommerceSystem.Controllers
             {
                 if (dto == null)
                     return BadRequest("User data is required.");
-
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
                 var user = new User
                 {
                     UName = dto.UName,
@@ -46,12 +44,9 @@ namespace E_CommerceSystem.Controllers
                     Role = Enum.Parse<User.UserRole>(dto.Role, true),
                     CreatedAt = DateTime.UtcNow
                 };
-
                 _userService.AddUser(user);
-
                 var result = _mapper.Map<UserDTO>(user);
                 result.Password = null; // don’t expose it
-
                 return Ok(result);
             }
             catch (Exception ex)
@@ -59,7 +54,6 @@ namespace E_CommerceSystem.Controllers
                 return StatusCode(500, $"An error occurred while adding the user. {ex.Message}");
             }
         }
-
         // keeping your GET login shape (though POST is recommended)
         [AllowAnonymous]
         [HttpGet("Login")]
