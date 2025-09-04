@@ -10,5 +10,8 @@ namespace E_CommerceSystem.Repositories
         Task<User> AddUserAsync(User user);
 
         Task<User?> GetUserByIdAsync(int uid);
+        Task AddRefreshTokenAsync(RefreshToken token);
+        Task<RefreshToken?> GetRefreshTokenAsync(string token);
+        Task RevokeRefreshTokenAsync(string token);
     }
 }

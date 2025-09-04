@@ -22,5 +22,23 @@ namespace E_CommerceSystem.Repositories
         }
         public Task<User?> GetUserByIdAsync(int uid)
        => _db.Users.SingleOrDefaultAsync(u => u.UID == uid);
+        public async Task AddRefreshTokenAsync(RefreshToken token)
+        {
+            _db.RefreshTokens.Add(token);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
+            => await _db.RefreshTokens.SingleOrDefaultAsync(r => r.Token == token);
+
+        public async Task RevokeRefreshTokenAsync(string token)
+        {
+            var t = await _db.RefreshTokens.SingleOrDefaultAsync(r => r.Token == token);
+            if (t != null)
+            {
+                t.RevokedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+        }
     }
 }

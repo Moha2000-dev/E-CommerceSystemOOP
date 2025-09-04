@@ -18,17 +18,17 @@ namespace E_CommerceSystem.Services
         private readonly IMapper _mapper;
         private readonly IConfiguration _cfg;
         private readonly ICookieTokenWriter _cookies;
-        private readonly ApplicationDbContext _db; // 👈 Inject DbContext لحفظ refresh
+        // private readonly ApplicationDbContext _db; //  Inject DbContext لحفظ refresh
 
         private static readonly string[] AllowedRoles = new[] { "Admin", "Customer", "Manager" };
 
-        public AuthService(IAuthRepo authRepo, IMapper mapper, IConfiguration cfg, ICookieTokenWriter cookies, ApplicationDbContext db)
+        public AuthService(IAuthRepo authRepo, IMapper mapper, IConfiguration cfg, ICookieTokenWriter cookies)
         {
             _authRepo = authRepo;
             _mapper = mapper;
             _cfg = cfg;
             _cookies = cookies;
-            _db = db;
+           // _db = db;
         }
 
         public async Task<UserDTO> RegisterAsync(RegisterUserDTO dto)
@@ -90,14 +90,13 @@ namespace E_CommerceSystem.Services
             var access = CreateJwtToken(user);
             var refresh = NewSecureToken();
 
-            _db.RefreshTokens.Add(new RefreshToken
+            await _authRepo.AddRefreshTokenAsync(new RefreshToken
             {
                 UserId = user.UID,
                 Token = refresh,
                 ExpiresAt = DateTime.UtcNow.AddDays(_cfg.GetValue<int>("Jwt:RefreshTokenDays", 7)),
                 CreatedByIp = ip
             });
-            await _db.SaveChangesAsync();
 
             _cookies.WriteAccessCookie(res, access, _cfg.GetValue<int>("Jwt:AccessTokenMinutes", 15));
             _cookies.WriteRefreshCookie(res, refresh, _cfg.GetValue<int>("Jwt:RefreshTokenDays", 7));
@@ -113,9 +112,8 @@ namespace E_CommerceSystem.Services
             if (!req.Cookies.TryGetValue("refresh_token", out var presented))
                 throw new Exception("Missing refresh token");
 
-            var token = await _db.RefreshTokens.SingleOrDefaultAsync(t => t.Token == presented);
+            var token = await _authRepo.GetRefreshTokenAsync(presented);
             if (token is null || !token.IsActive) throw new Exception("Invalid refresh token");
-
             // تدوير
             token.RevokedAt = DateTime.UtcNow;
             var newToken = new RefreshToken
@@ -126,12 +124,12 @@ namespace E_CommerceSystem.Services
                 CreatedByIp = ip,
                 ReplacedByToken = token.Token
             };
-            _db.RefreshTokens.Add(newToken);
+            await _authRepo.AddRefreshTokenAsync(newToken);
 
             var user = await _authRepo.GetUserByIdAsync(token.UserId) ?? throw new Exception("User not found");
             var newAccess = CreateJwtToken(user);
 
-            await _db.SaveChangesAsync();
+            
             _cookies.WriteAccessCookie(res, newAccess, _cfg.GetValue<int>("Jwt:AccessTokenMinutes", 15));
             _cookies.WriteRefreshCookie(res, newToken.Token, _cfg.GetValue<int>("Jwt:RefreshTokenDays", 7));
 
@@ -146,8 +144,7 @@ namespace E_CommerceSystem.Services
         {
             if (req.Cookies.TryGetValue("refresh_token", out var presented))
             {
-                var t = await _db.RefreshTokens.SingleOrDefaultAsync(x => x.Token == presented);
-                if (t != null) { t.RevokedAt = DateTime.UtcNow; await _db.SaveChangesAsync(); }
+                await _authRepo.RevokeRefreshTokenAsync(presented);
             }
             _cookies.ClearAuthCookies(res);
         }
