@@ -28,26 +28,29 @@ namespace E_CommerceSystem.Controllers
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] UserDTO inputUser)
+        public IActionResult Register([FromBody] RegisterUserDTO dto)
         {
             try
             {
-                if (inputUser == null)
+                if (dto == null)
                     return BadRequest("User data is required.");
 
-                // DTO -> Entity via AutoMapper
-                var user = _mapper.Map<User>(inputUser);
-                user.CreatedAt = DateTime.UtcNow; // set here (profile ignores it)
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-                // (Optional) hash password here or in service
-                // user.Password = _passwordHasher.Hash(inputUser.Password);
+                var user = new User
+                {
+                    UName = dto.UName,
+                    Email = dto.Email,
+                    Password = hashedPassword,
+                    Phone = dto.Phone,
+                    Role = Enum.Parse<User.UserRole>(dto.Role, true),
+                    CreatedAt = DateTime.UtcNow
+                };
 
                 _userService.AddUser(user);
 
-                // Entity -> DTO (but never include password)
                 var result = _mapper.Map<UserDTO>(user);
-                // ensure we don’t expose it even if someone later changes the profile
-                result.Password = null;
+                result.Password = null; // don’t expose it
 
                 return Ok(result);
             }
@@ -99,7 +102,7 @@ namespace E_CommerceSystem.Controllers
         [NonAction]
         public string GenerateJwtToken(string userId, string username, string role)
         {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var jwtSettings = _configuration.GetSection("Jwt");
             var secretKey = jwtSettings["SecretKey"];
 
             var claims = new[]

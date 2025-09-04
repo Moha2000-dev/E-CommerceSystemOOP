@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using AutoMapper;
 using E_CommerceSystem.Infrastructure.Repositories;
 using E_CommerceSystem.Middleware;
@@ -120,6 +121,11 @@ namespace E_CommerceSystem
                 options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
                 options.AddPolicy("AdminOrManager", p => p.RequireRole("Admin", "Manager"));
             });
+            builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
             // ---------- Swagger ----------
             builder.Services.AddEndpointsApiExplorer();

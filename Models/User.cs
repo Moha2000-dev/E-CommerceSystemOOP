@@ -18,7 +18,7 @@ namespace E_CommerceSystem.Models
         ErrorMessage = "Invalid email format.(e.g 'example@gmail.com')")]
         public string Email { get; set; }
 
-        [JsonIgnore]
+        //[JsonIgnore]
         [Required]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
         ErrorMessage = "Password must be at least 8 characters long, contain at least one uppercase letter," +

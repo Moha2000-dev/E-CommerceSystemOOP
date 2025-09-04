@@ -66,9 +66,9 @@ namespace E_CommerceSystem.Mapping.Profiles
             // Input DTO -> Entity
             // UserDTO mapping (already exists)
             CreateMap<UserDTO, User>()
-                .ForMember(u => u.Password, o => o.Ignore())
-                .ForMember(u => u.CreatedAt, o => o.Ignore());
-            CreateMap<User, UserDTO>();
+    .ForMember(u => u.Role, o => o.MapFrom(s => Enum.Parse<User.UserRole>(s.Role, true)))
+    .ForMember(u => u.Password, o => o.Ignore())
+    .ForMember(u => u.CreatedAt, o => o.Ignore());
 
             CreateMap<RegisterUserDTO, User>()
                 .ForMember(u => u.Password, o => o.Ignore())   // hash in service

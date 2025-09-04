@@ -61,7 +61,7 @@ namespace E_CommerceSystem.Services
         }
         public string CreateJwtToken(User user)
         {
-            var jwt = _cfg.GetSection("JwtSettings");
+            var jwt = _cfg.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

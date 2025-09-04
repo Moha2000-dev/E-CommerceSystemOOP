@@ -15,6 +15,7 @@ namespace E_CommerceSystem.Services
         public void AddUser(User user)
         {
             _userRepo.AddUser(user);
+
         }
         public void DeleteUser(int uid)
         {
