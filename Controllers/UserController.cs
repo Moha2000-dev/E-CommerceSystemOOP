@@ -28,29 +28,26 @@ namespace E_CommerceSystem.Controllers
 
         [AllowAnonymous]
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] RegisterUserDTO dto)
+        public IActionResult Register([FromBody] UserDTO inputUser)
         {
             try
             {
-                if (dto == null)
+                if (inputUser == null)
                     return BadRequest("User data is required.");
 
-                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+                // DTO -> Entity via AutoMapper
+                var user = _mapper.Map<User>(inputUser);
+                user.CreatedAt = DateTime.UtcNow; // set here (profile ignores it)
 
-                var user = new User
-                {
-                    UName = dto.UName,
-                    Email = dto.Email,
-                    Password = hashedPassword,
-                    Phone = dto.Phone,
-                    Role = Enum.Parse<User.UserRole>(dto.Role, true),
-                    CreatedAt = DateTime.UtcNow
-                };
+                // (Optional) hash password here or in service
+                 //user.Password = _passwordHasher.Hash(inputUser.Password);
 
                 _userService.AddUser(user);
 
+                // Entity -> DTO (but never include password)
                 var result = _mapper.Map<UserDTO>(user);
-                result.Password = null; // don’t expose it
+                // ensure we don’t expose it even if someone later changes the profile
+                result.Password = null;
 
                 return Ok(result);
             }
