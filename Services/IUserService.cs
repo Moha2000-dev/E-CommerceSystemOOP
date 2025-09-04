@@ -10,5 +10,9 @@ namespace E_CommerceSystem.Services
         User GetUser(string email, string password);
         User GetUserById(int uid);
         void UpdateUser(User user);
+        bool ExistsByEmail(string email);
+        User GetUserByEmail(string email);
+
+        User GetByEmailOrUName(string key);
     }
 }

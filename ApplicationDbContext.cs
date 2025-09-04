@@ -50,6 +50,27 @@ namespace E_CommerceSystem
                 .Property(p => p.RowVersion)
                 .IsRowVersion();
 
+            // In DbContext.OnModelCreating
+            modelBuilder.Entity<User>(e =>
+            {
+                e.HasKey(x => x.UID);
+                e.Property(x => x.UID).ValueGeneratedOnAdd();        // identity
+                e.Property(x => x.Email).IsRequired().HasMaxLength(256);
+                e.Property(x => x.Password).IsRequired().HasMaxLength(200);
+                e.Property(x => x.UName).IsRequired().HasMaxLength(100);
+                e.Property(x => x.Role).HasConversion<int>().IsRequired();
+                e.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                // Optional, if you want uniqueness (recommended)
+                e.HasIndex(x => x.Email).IsUnique();
+            });
+
+
+            modelBuilder.Entity<User>(e =>
+            {
+                e.Property(x => x.Password).IsRequired().HasMaxLength(100);
+                e.Property(x => x.Email).IsRequired().HasMaxLength(256);
+                e.Property(x => x.Role).HasConversion<int>().IsRequired();
+            });
 
         }
     }

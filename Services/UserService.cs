@@ -12,11 +12,8 @@ namespace E_CommerceSystem.Services
             _userRepo = userRepo;
         }
 
-        public void AddUser(User user)
-        {
-            _userRepo.AddUser(user);
+        public void AddUser(User u) => _userRepo.AddUser(u);
 
-        }
         public void DeleteUser(int uid)
         {
             var user = _userRepo.GetUserById(uid);
@@ -31,17 +28,21 @@ namespace E_CommerceSystem.Services
         }
         public User GetUser(string email, string password)
         {
-            var user = _userRepo.GetUserByEmail(email); // fetch only by email
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password))
                 return null;
 
-            // verify plain password against hash
-            if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
-                return null;
+            var user = _userRepo.GetUserByEmail(email);
+            if (user == null) return null;
 
-            return user;
+            return BCrypt.Net.BCrypt.Verify(password, user.Password) ? user : null;
         }
 
+        public bool ExistsByEmail(string email) =>
+    _userRepo.GetUserByEmail(email) != null;
+
+
+        public User GetUserByEmail(string email) => _userRepo.GetUserByEmail(email);
+        public User GetByEmailOrUName(string key) => _userRepo.GetByEmailOrUName(key);
 
 
         public User GetUserById(int uid)

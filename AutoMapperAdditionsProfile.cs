@@ -95,6 +95,8 @@ namespace E_CommerceSystem.Mapping.Profiles
              .ForMember(d => d.AvgRating, m => m.MapFrom(s => s.Reviews.Any() ? s.Reviews.Average(r => r.Rating) : 0))
              .ForMember(d => d.ReviewsCount, m => m.MapFrom(s => s.Reviews.Count));
 
+           
+
         }
     }
 }

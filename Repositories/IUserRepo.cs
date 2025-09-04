@@ -11,5 +11,7 @@ namespace E_CommerceSystem.Repositories
         User GetUserById(int uid);
         void UpdateUser(User user);
         User GetUserByEmail(string email);
+        User GetByEmailOrUName(string key);
+
     }
 }

@@ -9,10 +9,8 @@ namespace E_CommerceSystem.Repositories
         {
             _context = context;
         }
-        public User GetUserByEmail(string email)
-        {
-            return _context.Users.SingleOrDefault(u => u.Email == email);
-        }
+     
+
 
         //Get All users
         public IEnumerable<User> GetAllUsers()
@@ -91,6 +89,11 @@ namespace E_CommerceSystem.Repositories
                 throw new InvalidOperationException($"Database error: {ex.Message}");
             }
         }
+        public User GetUserByEmail(string email)
+        {
+            var normalized = email?.Trim().ToLower();
+            return _context.Users.SingleOrDefault(u => u.Email.ToLower() == normalized);
+        }
 
         //Get user by email and passward
         public User GetUSer(string email, string password)
@@ -112,6 +115,15 @@ namespace E_CommerceSystem.Repositories
             {
                 throw new InvalidOperationException($"Database error: {ex.Message}");
             }
+        }
+
+        public User GetByEmailOrUName(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return null;
+            var k = key.Trim();
+            var kLower = k.ToLower();
+            return _context.Users.SingleOrDefault(u =>
+                u.Email.ToLower() == kLower || u.UName == k);
         }
     }
 }
