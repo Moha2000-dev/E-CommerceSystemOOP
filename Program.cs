@@ -27,6 +27,7 @@ namespace E_CommerceSystem
             builder.Services.AddScoped<IUserRepo, UserRepo>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
             builder.Services.AddScoped<E_CommerceSystem.Repositories.IAdminReportRepo, E_CommerceSystem.Repositories.AdminReportRepo>();
             builder.Services.AddScoped<E_CommerceSystem.Services.IAdminReportService, E_CommerceSystem.Services.AdminReportService>();
             builder.Services.AddScoped<IProductRepo, ProductRepo>();
