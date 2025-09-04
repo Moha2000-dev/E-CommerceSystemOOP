@@ -11,7 +11,7 @@ namespace E_CommerceSystem.Repositories
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
 
-        // الحالات المحسوبة كإيراد
+       
         private static readonly OrderStatus[] RevenueStatuses = new[] { OrderStatus.Paid, OrderStatus.Delivered };
 
         public AdminReportRepo(ApplicationDbContext db, IMapper mapper)
@@ -37,8 +37,7 @@ namespace E_CommerceSystem.Repositories
                     TotalQuantity = g.Sum(x => x.Quantity),
                     TotalRevenue = g.Sum(x => x.Quantity * x.Order.TotalAmount /
                                               (x.Order.OrderProducts.Sum(p => p.Quantity) == 0 ? 1 : x.Order.OrderProducts.Sum(p => p.Quantity)))
-                    // ^ إن كان TotalAmount مخزّن على مستوى الطلب فقط. لو عندك UnitPrice في OrderProducts، استبدل بالسطر التالي الأبسط:
-                    // TotalRevenue  = g.Sum(x => x.Quantity * x.UnitPrice)
+              
                 })
                 .OrderByDescending(x => x.TotalQuantity)
                 .ThenByDescending(x => x.TotalRevenue)

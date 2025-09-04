@@ -28,7 +28,7 @@ namespace E_CommerceSystem.Controllers
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var resp = await _authService.LoginWithCookiesAsync(dto.UName, dto.Password, Response, ip);
             if (resp is null) return Unauthorized("Invalid credentials");
-            return Ok(resp); // التوكن أيضًا محفوظ في الكوكي
+            return Ok(resp); 
         }
 
         [AllowAnonymous]
