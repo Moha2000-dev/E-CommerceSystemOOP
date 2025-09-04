@@ -42,6 +42,12 @@ namespace E_CommerceSystem.Controllers
                 // (Optional) hash password here or in service
                  //user.Password = _passwordHasher.Hash(inputUser.Password);
 
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                    CreatedAt = DateTime.UtcNow
+                };
+
                 _userService.AddUser(user);
 
                 // Entity -> DTO (but never include password)
@@ -56,7 +62,6 @@ namespace E_CommerceSystem.Controllers
                 return StatusCode(500, $"An error occurred while adding the user. {ex.Message}");
             }
         }
-
         // keeping your GET login shape (though POST is recommended)
         [AllowAnonymous]
         [HttpGet("Login")]
