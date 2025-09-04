@@ -20,11 +20,13 @@ namespace E_CommerceSystem
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddControllers();
+            builder.Services.AddScoped<IOrderSummaryRepo, OrderSummaryRepo>();
+            builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
 
             // Add services to the container.
             builder.Services.AddScoped<IUserRepo, UserRepo>();
             builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IOrderSummaryService, OrderSummaryService>();
+            
             builder.Services.AddScoped<IProductRepo, ProductRepo>();
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<IOrderProductsRepo, OrderProductsRepo>();
