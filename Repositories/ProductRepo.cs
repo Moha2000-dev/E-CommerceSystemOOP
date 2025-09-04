@@ -12,7 +12,10 @@ namespace E_CommerceSystem.Repositories
         {
             _context = context;
         }
-
+        public IQueryable<Product> QueryProducts()
+        {
+            return _context.Products.AsNoTracking();
+        }
         public IEnumerable<Product> GetAllProducts()
         {
             try

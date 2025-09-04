@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using E_CommerceSystem.Models;
+using E_CommerceSystem.Repositories;
 using Microsoft.EntityFrameworkCore;
 using static E_CommerceSystem.Models.PagingDtos;
 
@@ -8,12 +9,12 @@ namespace E_CommerceSystem.Services
 {
     public class ProductService : IProductService
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IProductRepo _repo;
         private readonly IMapper _mapper;
 
-        public ProductService(ApplicationDbContext db, IMapper mapper)
+        public ProductService(IProductRepo repo, IMapper mapper)
         {
-            _db = db;
+            _repo = repo;
             _mapper = mapper;
         }
 
@@ -28,7 +29,7 @@ namespace E_CommerceSystem.Services
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var query = _db.Products.AsNoTracking();
+            var query = _repo.QueryProducts();
 
             // Filters
             if (!string.IsNullOrWhiteSpace(name))
@@ -53,28 +54,22 @@ namespace E_CommerceSystem.Services
 
         public Product? GetProductById(int pid)
         {
-            return _db.Products.Find(pid);
+            return _repo.GetProductById(pid);
         }
 
         public void AddProduct(Product product)
         {
-            _db.Products.Add(product);
-            _db.SaveChanges();
+            _repo.AddProduct(product);
         }
 
         public void UpdateProduct(Product product)
         {
-            var existing = _db.Products.Find(product.PID);
-            if (existing == null)
-                throw new KeyNotFoundException($"Product with ID {product.PID} not found.");
-
-            _db.Entry(existing).CurrentValues.SetValues(product);
-            _db.SaveChanges();
+            _repo.UpdateProduct(product);
         }
 
         public Product GetProductByName(string productName)
         {
-            var product = _db.Products.FirstOrDefault(p => p.ProductName == productName);
+            var product = _repo.GetProductByName(productName);
             if (product == null)
                 throw new KeyNotFoundException($"Product with name {productName} not found.");
             return product;

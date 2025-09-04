@@ -38,6 +38,7 @@ namespace E_CommerceSystem
             builder.Services.AddAutoMapper(typeof(Program).Assembly);
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<ISupplierService, SupplierService>();
+            builder.Services.AddScoped<IProductQueryRepo, ProductQueryRepo>();
             builder.Services.AddScoped<IProductQueryService, ProductQueryService>();
             builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<ICookieTokenWriter, CookieTokenWriter>();

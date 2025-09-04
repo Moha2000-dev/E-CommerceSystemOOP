@@ -1,4 +1,5 @@
 ﻿using E_CommerceSystem.Models;
+using System.Linq;
 
 namespace E_CommerceSystem.Repositories
 {
@@ -9,5 +10,6 @@ namespace E_CommerceSystem.Repositories
         Product GetProductById(int pid);
         void UpdateProduct(Product product);
         Product GetProductByName(string productName);
+        IQueryable<Product> QueryProducts();
     }
 }

@@ -3,36 +3,38 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;             // <-- IMPORTANT
 using E_CommerceSystem;
 using E_CommerceSystem.Models;
+using E_CommerceSystem.Repositories;
 using E_CommerceSystem.Services;
 using Microsoft.EntityFrameworkCore;
 using static E_CommerceSystem.Models.PagingDtos;
 
 public class ProductQueryService : IProductQueryService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IProductQueryRepo _repo;
     private readonly IMapper _mapper;
 
-    public ProductQueryService(ApplicationDbContext db, IMapper mapper)
+    public ProductQueryService(IProductQueryRepo repo, IMapper mapper)
     {
-        _db = db;
+        _repo = repo;
         _mapper = mapper;
     }
-
     public async Task<PagedResult<ProductDTO>> GetAsync(
-        string? name, decimal? minPrice, decimal? maxPrice, int page, int pageSize)
+            string? name, decimal? minPrice, decimal? maxPrice, int page, int pageSize)
     {
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 20;
 
-        var q = _db.Products.AsNoTracking();
+        //  get base query from repo
+        var q = _repo.QueryProducts();
 
+        // Filtering (business logic, stays in service)
         if (!string.IsNullOrWhiteSpace(name)) q = q.Where(p => p.ProductName.Contains(name));
         if (minPrice.HasValue) q = q.Where(p => p.Price >= minPrice.Value);
         if (maxPrice.HasValue) q = q.Where(p => p.Price <= maxPrice.Value);
 
         var total = await q.CountAsync();
 
-        // AutoMapper does entity -> ProductDTO here
+        // Mapping to DTOs
         var items = await q.OrderBy(p => p.PID)
             .ProjectTo<ProductDTO>(_mapper.ConfigurationProvider)
             .Skip((page - 1) * pageSize)
