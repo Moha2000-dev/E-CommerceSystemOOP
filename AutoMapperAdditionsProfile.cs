@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using AutoMapper;
+using E_CommerceSystem.DTOs;
 using E_CommerceSystem.Models; // entities + your DTO container classes
 
 namespace E_CommerceSystem.Mapping.Profiles
@@ -87,6 +88,12 @@ namespace E_CommerceSystem.Mapping.Profiles
             CreateMap<User, LoginResponseDTO>()
                 .ForMember(d => d.Token, o => o.Ignore()); // set later after issuing JWT
 
+            // ===================== TOP RATED PRODUCTS =====================
+            CreateMap<Product, TopRatedProductDto>()
+             .ForMember(d => d.ProductId, m => m.MapFrom(s => s.PID))
+             .ForMember(d => d.ProductName, m => m.MapFrom(s => s.ProductName))
+             .ForMember(d => d.AvgRating, m => m.MapFrom(s => s.Reviews.Any() ? s.Reviews.Average(r => r.Rating) : 0))
+             .ForMember(d => d.ReviewsCount, m => m.MapFrom(s => s.Reviews.Count));
 
         }
     }
