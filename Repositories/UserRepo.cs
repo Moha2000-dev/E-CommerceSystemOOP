@@ -9,6 +9,10 @@ namespace E_CommerceSystem.Repositories
         {
             _context = context;
         }
+        public User GetUserByEmail(string email)
+        {
+            return _context.Users.SingleOrDefault(u => u.Email == email);
+        }
 
         //Get All users
         public IEnumerable<User> GetAllUsers()

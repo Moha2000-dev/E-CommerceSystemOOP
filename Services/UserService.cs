@@ -31,13 +31,17 @@ namespace E_CommerceSystem.Services
         }
         public User GetUSer(string email, string password)
         {
-            var user = _userRepo.GetUSer(email, password);
-            if (user == null)
+            var user = _userRepo.GetUserByEmail(email);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
             {
                 throw new UnauthorizedAccessException("Invalid email or password.");
             }
+
             return user;
         }
+
+
         public User GetUserById(int uid)
         {
             var user = _userRepo.GetUserById(uid);
