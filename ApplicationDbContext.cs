@@ -17,7 +17,8 @@ namespace E_CommerceSystem
         public DbSet<Category> Categories => Set<Category>(); // DbSet for Category entity
         public DbSet<Supplier> Suppliers => Set<Supplier>();  // DbSet for Supplier entity
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-      
+        public object OrderItems { get; internal set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder) // Override the OnModelCreating method to configure the model
         {
             modelBuilder.Entity<User>() // Configure the User entity
